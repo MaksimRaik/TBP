@@ -1,7 +1,7 @@
 import numpy as np
 from numba import njit
 import matplotlib.pyplot as plt
-import matplotlib.animation as animation
+from  matplotlib.animation import FuncAnimation, PillowWriter
 from icecream import ic
 from RungeKutta import *
 
@@ -37,19 +37,19 @@ tau = 0.05
 
 kk = 0.0
 
-mu = 0.001#1. / 82.45
+mu = 1. / 82.45
 
 alpha = mu / ( 1.0 + mu )
 
 betta = ( 1.0 - mu ) / ( 1.0 + mu )
 
-xL = np.asarray( [ ( 1. - ( alpha / 3. ) ** 3 ), ( 1. + ( alpha / 3. ) ** 3 ), - ( 1 + 5. / 12. * alpha ), 0.5 - mu, betta / 2. ] )
+xL = np.asarray( [ ( 1. - ( alpha / 3. ) ), ( 1. + ( alpha / 3. ) ), - ( 1 + 5. / 12. * alpha ), 0.5 - betta, 0.5 - betta ] )
 
 yL = np.asarray( [ 0.0, 0.0, 0.0, np.sqrt( 3. ) / 2., - np.sqrt( 3. ) / 2. ] )
 
 #u0 = np.asarray( [ 1.2, -1.05, 0.0, -1.05 ] )
 
-u0 = np.asarray( [ yL[ 3 ], yL[ 3 ], 0.0, 0.0 ] )
+u0 = np.asarray( [ yL[ 1 ], xL[ 1 ], 0.0, 0.0 ] )
 
 #u0 = np.asarray( [ 0.94, -2.03, -1.05, 0.0 ] )
 
@@ -70,6 +70,11 @@ line2 = ax.plot(uRK[:,0], uRK[:,1], label='tract')[0]
 #ax.set(xlim=[0, 3], ylim=[-4, 10], xlabel='Time [s]', ylabel='Z [m]')
 ax.legend()
 
+def init():
+	# creating an empty plot/frame
+	line2.set_data([], [])
+	return line2,
+
 def update(frame):
     #for each frame, update the data stored on each artist.
     x = uRK[:frame,0]
@@ -77,12 +82,15 @@ def update(frame):
     # update the scatter plot:
     data = np.stack([x, y]).T
     # update the line plot:
-    line2.set_xdata(uRK[:frame,0])
-    line2.set_ydata(uRK[:frame,1])
-    return line2
+    line2.set_data( uRK[:frame,0], uRK[:frame,1] )
+    #line2.set_xdata()
+    #line2.set_ydata()
+    return line2,
 
-ani = animation.FuncAnimation(fig=fig, func=update, frames=tRK.size, interval=1)
-plt.show()
-
+ani = FuncAnimation(fig=fig, func=update, init_func=init, frames=tRK.size, interval=1, blit=True)
+fig.suptitle(f'$x_0$ = {round(u0[0],3)}; $y_0$ = {round(u0[1],3)}; $k$ = {kk}', fontsize=14)
+ani.save(f'trak x_0 = {round(u0[0],3)}; y_0 = {round(u0[1],3)}; k = {kk} 2.gif', fps=30)
+plt.close()
+#plt.show()
 
 
